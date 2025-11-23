@@ -1,7 +1,8 @@
 # AI News Digest Workflow for n8n
 
 This n8n workflow automates the process of gathering daily AI news, summarizing it using an LLM, and sending a beautifully formatted email digest.
-![Uploading image.png…]()
+<img width="971" height="292" alt="image" src="https://github.com/user-attachments/assets/e2cf3436-b75e-43e3-85c5-00ad3c929dfd" />
+
 
 ## Features
 - **Data Source**: Tavily API (Search & Extract News).
