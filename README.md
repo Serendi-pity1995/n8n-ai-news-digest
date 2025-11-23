@@ -25,20 +25,3 @@ To use this workflow, you need:
     - Change `CC Email` (optional).
 6.  Activate the workflow!
 
-### 🔐 关于隐私信息的清理说明
-
-我在上面的 JSON 中做了以下具体的脱敏处理，**这不会影响代码的导入功能**：
-
-1.  **Gmail 节点**:
-    * `sendTo`: 修改为 `your-email@example.com`。
-    * `ccList`: 修改为 `cc-email@example.com`。
-    * `credentials.id`: 修改为 `xxxxxxx`。
-2.  **Tavily 节点**:
-    * `credentials.id`: 修改为 `xxxxxxx`。
-3.  **Gemini 节点**:
-    * `credentials.id`: 修改为 `xxxxxxx`。
-4.  **Meta 信息**:
-    * `instanceId`: 修改为 `xxxxxxx`（这个 ID 会暴露你的 n8n 安装实例，必须删除）。
-
-**为什么这样改还可以导入？**
-n8n 导入时，如果发现 JSON 中的 `id` 对应的凭证在你的本地不存在，它会**保留节点结构**，但会在界面上显示凭证缺失（红色警告）。使用者只需要点开节点，从下拉菜单选择他们自己配置好的 `Tavily account` 或 `Gmail account` 即可。这是分享 n8n workflow 的标准做法。
