@@ -1,0 +1,206 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cc65feb6-94b5-40a6-afa5-88580a58b54d",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        496,
+        208
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        432
+      ],
+      "id": "63428186-37c5-4495-b350-4fb0546166e4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xxxxxxx",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        208
+      ],
+      "id": "63a5acee-0975-493c-b1d5-ea6d7e12693c",
+      "name": "Convert Digest Markdown → HTML"
+    },
+    {
+      "parameters": {
+        "prompt": "=You are a professional news editor. Your task is to synthesize a concise \"Daily News Digest\" from the provided JSON data.\n\n**Input Data:**\n{{ JSON.stringify($json.results) }}\n\n**Task Instructions:**\n\n1.  **Analyze**: Read the `results` array from the input JSON. Each item contains a `title`, `url`, and `content`.\n2.  **Filter**: Skip any articles where `content` is empty or too short.\n3.  **Summarize**: For each valid article, write a concise summary (80-120 words) based *only* on the provided `content`. Capture the key facts and why it matters.\n4.  **Format**: Output the result in the specific Markdown format defined below.\n      * **Crucial**: You MUST map the `url` from the JSON to the Markdown link syntax `[Title](url)`.\n      * **Language**: Write the summary in English.\n\n**Output Template (Markdown):**\n\n### [<Insert Title Here>](<Insert URL Here>)\n\n> <Insert your generated summary here without any prefix like 'Summary:'>\n\n-----\n\n(Repeat the above block for every news item in the list)"
+      },
+      "id": "b934e526-a234-4e68-9edd-2024816b30a4",
+      "name": "LLM: Summarize Digest (Markdown)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        1168,
+        208
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get Tavily output results\nconst items = $input.all();\n// Compatibility handling: prevent empty results\n// Read the results array returned by Tavily directly, no Split Out node needed\nconst results = items[0]?.json?.results || [];\n\n// Define simple cleaning function\nfunction cleanTextContent(text) {\n  if (!text) return \"\";\n  let cleanText = text;\n  \n  // Remove excess newlines and leading/trailing whitespace\n  cleanText = cleanText.replace(/\\n+/g, ' ');\n  return cleanText.trim();\n}\n\n// Process each news item\nconst cleanedNews = results.map(item => {\n  // Get content only (ignore raw_content) and clean it\n  const originalContent = item.content || \"\";\n  const finalContent = cleanTextContent(originalContent);\n\n  return {\n    title: item.title,\n    url: item.url,\n    content: finalContent \n  };\n});\n\n// Filter out items with empty content\nconst validNews = cleanedNews.filter(item => item.content && item.content.length > 10);\n\n// [Critical]: Wrap the organized array back into an object to return\n// This ensures LLM receives \"1 data packet with 5 news items\" instead of \"5 data packets\"\nreturn [{\n  json: {\n    results: validNews\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        208
+      ],
+      "id": "8a7639cc-782b-4a0f-ae4d-5d21d39cbba4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "={{ 'Daily Digest - ' + $today.format('yyyy-MM-dd') }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Daily News Digest</title>\n<style>\n  /* --- Global Reset --- */\n  body {\n    margin: 0;\n    padding: 0;\n    /* Background: Very pale warm beige, like thick writing paper */\n    background-color: #fcfbf9; \n    font-family: \"Georgia\", \"Songti SC\", \"SimSun\", serif;\n    color: #444;\n    -webkit-font-smoothing: antialiased;\n    line-height: 1.8;\n  }\n\n  /* --- Container --- */\n  .wrapper {\n    width: 100%;\n    padding: 50px 0;\n    background-color: #fcfbf9;\n  }\n\n  .main-container {\n    margin: 0 auto;\n    max-width: 600px;\n    background-color: #ffffff;\n    /* Soft shadow for depth */\n    box-shadow: 0 5px 20px rgba(0,0,0,0.03);\n    padding: 40px;\n    border-radius: 8px;\n  }\n\n  /* --- Header --- */\n  .header {\n    text-align: center;\n    margin-bottom: 60px;\n    padding-bottom: 20px;\n    border-bottom: 1px dashed #e0e0e0; /* Dashed line, airy feel */\n  }\n\n  .header-subtitle {\n    font-family: sans-serif;\n    font-size: 10px;\n    letter-spacing: 4px;\n    color: #999;\n    text-transform: uppercase;\n    margin-bottom: 15px;\n    display: block;\n  }\n\n  .header-title {\n    font-size: 36px;\n    font-weight: normal; /* No bold */\n    color: #2c2c2c;\n    margin: 0;\n    letter-spacing: 3px;\n  }\n\n  /* --- Content Area --- */\n  .content {\n    padding: 0;\n  }\n\n  /* 1. News Title (h3) - Key for fresh look */\n  .content h3 {\n    margin-top: 50px; /* More spacing */\n    margin-bottom: 15px;\n    font-size: 22px; /* Larger font */\n    font-weight: 400; /* Regular weight, elegant */\n    line-height: 1.4;\n  }\n\n  /* 2. Link Style (a) */\n  .content h3 a {\n    color: #2f5946 !important; /* Elegant Forest Green */\n    text-decoration: none !important;\n    background-image: linear-gradient(to right, #dcebd6 0%, #dcebd6 100%); /* Pale green highlight bottom */\n    background-repeat: no-repeat;\n    background-size: 100% 30%; /* Only highlight bottom 30% */\n    background-position: 0 85%;\n    transition: background-size 0.3s, color 0.3s;\n    padding-bottom: 2px;\n  }\n\n  .content h3 a:hover {\n    background-size: 100% 100%; /* Full fill on hover */\n    color: #1a3328 !important;\n  }\n\n  /* 3. Summary Card (blockquote) */\n  .content blockquote {\n    margin: 0;\n    padding: 25px 30px; /* Spacious padding */\n    /* Core Change: No border, soft background block */\n    background-color: #f7f9f8; /* Very pale mint grey */\n    border-radius: 6px;\n    color: #555;\n    font-size: 16px; /* Larger text */\n    font-style: normal; \n    line-height: 1.9; /* More line height */\n    text-align: justify;\n  }\n  \n  /* Remove default paragraph margins */\n  .content blockquote p {\n    margin: 0;\n  }\n\n  /* 4. Hide HR */\n  .content hr {\n    display: none;\n  }\n\n  /* --- Footer --- */\n  .footer {\n    margin-top: 70px;\n    text-align: center;\n    color: #b0b0b0;\n    font-size: 11px;\n    font-family: sans-serif;\n    letter-spacing: 1px;\n  }\n\n</style>\n</head>\n<body>\n\n<div class=\"wrapper\">\n  <div class=\"main-container\">\n    \n    <!-- Header -->\n    <div class=\"header\">\n      <span class=\"header-subtitle\">Daily Selection</span>\n      <h1 class=\"header-title\">阅 · 读</h1>\n    </div>\n\n    <!-- Content -->\n    <div class=\"content\">\n      {{ $json.data }}\n    </div>\n\n    <!-- Footer -->\n    <div class=\"footer\">\n      <p>Simplicity is the ultimate sophistication.</p>\n    </div>\n\n  </div>\n</div>\n\n</body>\n</html>",
+        "options": {
+          "ccList": "cc-email@example.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1744,
+        208
+      ],
+      "id": "28211ee3-4fa8-4828-a61a-882d3dc9944c",
+      "name": "Email Digest to Subscriber",
+      "webhookId": "eba1eccd-3a36-49c6-b890-6b256f17d792",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xxxxxxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "AI",
+        "options": {
+          "topic": "news",
+          "max_results": 5,
+          "days": 1,
+          "include_raw_content": false
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        720,
+        208
+      ],
+      "id": "1042458e-c822-4d10-9986-383bfc85516b",
+      "name": "Search News related with \"Keyword\"",
+      "credentials": {
+        "tavilyApi": {
+          "id": "xxxxxxx",
+          "name": "Tavily account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search News related with \"Keyword\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM: Summarize Digest (Markdown)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Digest Markdown → HTML": {
+      "main": [
+        [
+          {
+            "node": "Email Digest to Subscriber",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM: Summarize Digest (Markdown)": {
+      "main": [
+        [
+          {
+            "node": "Convert Digest Markdown → HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "LLM: Summarize Digest (Markdown)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search News related with \"Keyword\"": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "xxxxxxx"
+  }
+}
