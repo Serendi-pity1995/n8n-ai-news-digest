@@ -20,8 +20,9 @@ To use this workflow, you need:
 2.  Open your n8n dashboard.
 3.  Click **Import workflow** (top right) -> **From File**.
 4.  Configure your credentials in the `Tavily`, `Google Gemini`, and `Gmail` nodes.
-5.  Update the **Email Digest to Subscriber** node:
+5.  In the Tavily node, enter the topic you’re interested in under the ‘query’ field.
+6.  Update the **Email Digest to Subscriber** node:
     - Change `To Email` to your recipient address.
     - Change `CC Email` (optional).
-6.  Activate the workflow!
+7.  Activate the workflow!
 
